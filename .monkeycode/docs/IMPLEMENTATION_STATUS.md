@@ -223,6 +223,10 @@ Property M1 位于 `src/features/memos/memoSaveQueue.property.test.ts`，生产�
 
 备忘录中心最终检查点通过：前端串行全量为 39 个测试文件共 179 项，Rust 为 218 项库测试与 13 项集成/适配测试，共 231 项。`pnpm run typecheck`、`pnpm run build`、`cargo fmt --all -- --check`、`cargo test --offline --locked`、`cargo check --offline --locked --features desktop-app`、`cargo clippy --offline --locked --all-targets --features desktop-app -- -D warnings` 和 `git diff --check` 全部通过。Vite 预览在端口 1420 保持运行并通过平台代理连接检测。Windows MSVC 目标与安装态通知点击继续在原生 Windows 发布环境验收。
 
+备忘录首次保存详情刷新修复后，`MemoWorkspace` 在 command 返回同一条权威记录时保持编辑器可操作，并在后台重新读取 SQLite 详情；切换到尚未加载的记录时继续展示加载骨架。这消除了首次保存后编辑器短暂闪回骨架导致置顶等操作消失的竞态。`MemoWorkspace.test.tsx` 的首次保存与即时置顶场景提供回归覆盖；前端 39 个测试文件共 179 项、Rust 218 项库测试与 13 项集成/适配测试、TypeScript 类型检查、生产构建和 Rust 格式检查通过。
+
+今日随手便签长文本布局优化后，桌面工作台恢复 260px 周目标栏、弹性任务区和 300px 日程便签栏，便签面板至少高 380px，正文区至少高 240px，并提供内部滚动和纵向尺寸调整；820px 以下继续回流为单列全宽。`src/styles/today-layout.contract.test.ts` 固定三列宽度、正文可读空间和窄屏回流契约。真实 Chromium 截图审核覆盖 1360 × 860、1024 × 768 和 390 × 844 视口及长文本场景，确认桌面三栏、过渡布局、窄屏单列、内部滚动、保存状态和操作区域完整可用。前端串行全量 40 个测试文件共 182 项、Rust 218 项库测试与 13 项集成/适配测试、TypeScript 类型检查、生产构建、Rust 格式检查、包含 `desktop-app` feature 的严格 Clippy 和 `git diff --check` 通过。
+
 备份定向单元测试可在 `src-tauri/` 执行 `cargo test backup`。P9 属性测试默认运行 64 组随机业务图，验证版本化 JSON 序列化、解析、SQLite 导入和再次导出的规范化模型及摘要等价。
 
 独立恢复集成测试执行 `cargo test --offline --locked --test backup_restore`。测试覆盖未知格式版本、版本 2 损坏引用、版本 1 确定转换、磁盘数据库替换与重开、四类备忘录数据恢复、恢复前快照解析、SQL 故障注入、原数据回滚和快照历史保留。

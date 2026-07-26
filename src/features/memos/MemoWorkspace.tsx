@@ -117,7 +117,7 @@ export function MemoWorkspace({
       return;
     }
     let active = true;
-    setDetailLoading(true);
+    setDetailLoading(selectedMemoRef.current?.id !== selectedId);
     setDetailError(null);
     void client.get(selectedId).then((result) => {
       if (!active) return;
