@@ -1,6 +1,6 @@
 [package]
 name = "arrive-focus"
-version = "0.1.4"
+version = "0.1.5"
 description = "A local-first Windows focus system"
 authors = ["Arrive Focus"]
 edition = "2021"
