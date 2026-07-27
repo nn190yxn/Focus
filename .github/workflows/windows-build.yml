@@ -43,9 +43,15 @@ jobs:
       - name: Enable VBScript for MSI bundling
         shell: pwsh
         run: |
-          $feature = Get-WindowsOptionalFeature -Online -FeatureName VBSCRIPT
-          if ($feature.State -ne "Enabled") {
+          $feature = Get-WindowsOptionalFeature -Online -FeatureName VBSCRIPT -ErrorAction SilentlyContinue
+          if ($feature -and $feature.State -ne "Enabled") {
             Enable-WindowsOptionalFeature -Online -FeatureName VBSCRIPT -All -NoRestart
+          } elseif (-not $feature) {
+            $capability = Get-WindowsCapability -Online | Where-Object Name -Like "VBSCRIPT*" | Select-Object -First 1
+            if (-not $capability) { throw "VBScript Windows capability was not found" }
+            if ($capability.State -ne "Installed") {
+              Add-WindowsCapability -Online -Name $capability.Name
+            }
           }
 
       - name: Cache Rust build output
