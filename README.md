@@ -35,4 +35,15 @@ cargo test --manifest-path src-tauri/Cargo.toml --offline --locked
 cargo clippy --manifest-path src-tauri/Cargo.toml --offline --locked --all-targets --features desktop-app -- -D warnings
 ```
 
+## Windows 云构建
+
+GitHub Actions 的 `Windows Build` 工作流会在 `windows-2022` runner 上运行测试，并生成以下 Windows x64 文件：
+
+- NSIS 安装包 `Focus_<version>_x64-setup.exe`
+- MSI 安装包 `Focus_<version>_x64_en-US.msi`
+- 便携主程序 `arrive-focus.exe`
+- 完整性校验文件 `SHA256SUMS.txt`
+
+推送到 `main` 或手动运行工作流时，文件会保留为 14 天有效的 workflow artifact。推送与项目版本一致的 `v*` 标签时，文件会同步到对应 GitHub Release。
+
 项目文档位于 `.monkeycode/docs/`，需求与设计规格位于 `.monkeycode/specs/`。
