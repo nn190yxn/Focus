@@ -40,7 +40,7 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --offline --locked --all-targe
 GitHub Actions 的 `Windows Build` 工作流会在 `windows-2022` runner 上运行测试，并生成以下 Windows x64 文件：
 
 - NSIS 安装包 `Focus_<version>_x64-setup.exe`
-- MSI 安装包 `Focus_<version>_x64_en-US.msi`
+- 简体中文 MSI 安装包 `Focus_<version>_x64_zh-CN.msi`
 - 便携主程序 `arrive-focus.exe`
 - 完整性校验文件 `SHA256SUMS.txt`
 

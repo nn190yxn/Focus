@@ -90,7 +90,7 @@ jobs:
 
           $msi = Get-ChildItem "src-tauri/target/release/bundle/msi/*.msi" | Select-Object -First 1
           if (-not $msi) { throw "MSI installer was not generated" }
-          Copy-Item $msi.FullName (Join-Path $output "Focus_${version}_x64_en-US.msi")
+          Copy-Item $msi.FullName (Join-Path $output "Focus_${version}_x64_zh-CN.msi")
 
           Get-ChildItem "$output/*" | Sort-Object Name | ForEach-Object {
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
