@@ -15,6 +15,7 @@ import { WidgetApp } from "./WidgetApp";
 const mocks = vi.hoisted(() => ({
   getConfig: vi.fn(),
   updateConfig: vi.fn(),
+  hideWidget: vi.fn(),
   getDigest: vi.fn(),
   getFocusState: vi.fn(),
   startFocus: vi.fn(),
@@ -33,7 +34,7 @@ vi.mock("../lib/commandClient", () => ({
 }));
 
 vi.mock("../features/widget/widgetClient", () => ({
-  widgetClient: { getConfig: mocks.getConfig, updateConfig: mocks.updateConfig },
+  widgetClient: { getConfig: mocks.getConfig, updateConfig: mocks.updateConfig, hide: mocks.hideWidget },
 }));
 
 vi.mock("../features/settings/settingsClient", () => ({
@@ -73,6 +74,7 @@ beforeEach(() => {
   vi.spyOn(window.navigator, "languages", "get").mockReturnValue(["zh-CN"]);
   mocks.listeners.clear();
   mocks.getConfig.mockResolvedValue({ ok: true, data: defaultWidgetConfig, version: 1 });
+  mocks.hideWidget.mockResolvedValue({ ok: true, data: null, version: 1 });
   mocks.getSettings.mockResolvedValue({
     ok: true,
     data: { language: "system", appearance: "system", theme: "mint", backgroundRunning: true },
@@ -254,6 +256,14 @@ describe("WidgetApp", () => {
       }),
     );
     await waitFor(() => expect(container.querySelector("main")).toHaveAttribute("data-locked", "true"));
+  });
+
+  it("hides the widget from its header close button", async () => {
+    render(<WidgetApp />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "关闭小组件" }));
+
+    await waitFor(() => expect(mocks.hideWidget).toHaveBeenCalledTimes(1));
   });
 
   it("renders five detailed tasks in standard mode and one pending task in compact mode", async () => {

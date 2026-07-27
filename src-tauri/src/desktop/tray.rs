@@ -9,6 +9,8 @@ const SHOW_MAIN_ID: &str = "tray_show_main";
 #[cfg(feature = "desktop-app")]
 const SHOW_WIDGET_ID: &str = "tray_show_widget";
 #[cfg(feature = "desktop-app")]
+const HIDE_WIDGET_ID: &str = "tray_hide_widget";
+#[cfg(feature = "desktop-app")]
 const FOCUS_TOGGLE_ID: &str = "tray_focus_toggle";
 #[cfg(feature = "desktop-app")]
 const QUICK_TASK_ID: &str = "tray_quick_task";
@@ -167,6 +169,8 @@ pub fn setup_tray(app: &tauri::App) -> Result<(), crate::DomainError> {
         .map_err(tray_error)?;
     let show_widget = MenuItem::with_id(app, SHOW_WIDGET_ID, "显示小组件", true, None::<&str>)
         .map_err(tray_error)?;
+    let hide_widget = MenuItem::with_id(app, HIDE_WIDGET_ID, "隐藏小组件", true, None::<&str>)
+        .map_err(tray_error)?;
     let focus_toggle = MenuItem::with_id(
         app,
         FOCUS_TOGGLE_ID,
@@ -192,6 +196,7 @@ pub fn setup_tray(app: &tauri::App) -> Result<(), crate::DomainError> {
             &separator_one,
             &show_main,
             &show_widget,
+            &hide_widget,
             &separator_two,
             &focus_toggle,
             &quick_task,
@@ -388,6 +393,7 @@ fn handle_menu_action(app: &tauri::AppHandle, menu_id: &str) -> Result<(), crate
     match menu_id {
         SHOW_MAIN_ID => show_main_window(app),
         SHOW_WIDGET_ID => show_widget(app),
+        HIDE_WIDGET_ID => crate::commands::widget::hide_widget(app),
         FOCUS_TOGGLE_ID => toggle_focus(app),
         QUICK_TASK_ID => open_quick_task(app),
         UNLOCK_WIDGET_ID => unlock_widget(app),

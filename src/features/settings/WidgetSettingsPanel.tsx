@@ -60,6 +60,12 @@ export function WidgetSettingsPanel() {
     else setError(domainErrorMessage(result.error, t));
   }
 
+  async function hideWidget() {
+    if (!desktopRuntime) return;
+    const result = await widgetClient.hide();
+    if (!result.ok) setError(domainErrorMessage(result.error, t));
+  }
+
   function toggleModule(module: WidgetModule, enabled: boolean) {
     const next = enabled
       ? [...config.modules, module]
@@ -115,6 +121,7 @@ export function WidgetSettingsPanel() {
         </fieldset>
         <div className="settings-actions">
           <Button tone="secondary" disabled={!desktopRuntime || saving} onClick={() => void showWidget()}>{t("settings.widget.show")}</Button>
+          <Button tone="ghost" disabled={!desktopRuntime || saving} onClick={() => void hideWidget()}>{t("settings.widget.hide")}</Button>
           <span>{t(config.mode === "desktop" ? "settings.widget.desktopHint" : "settings.widget.floatingHint")}</span>
         </div>
         {error ? <p className="settings-error" role="alert">{error}</p> : null}

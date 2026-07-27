@@ -108,13 +108,17 @@ impl WidgetWindowGeometry {
         }
     }
 
-    pub fn apply_to(self, input: &mut WidgetConfigInput) {
+    pub fn apply_position_to(&self, input: &mut WidgetConfigInput) {
         input.x = self.x;
         input.y = self.y;
+        input.monitor_id.clone_from(&self.monitor_id);
+        input.scale_factor = self.scale_factor;
+    }
+
+    pub fn apply_to(self, input: &mut WidgetConfigInput) {
+        self.apply_position_to(input);
         input.width = self.width;
         input.height = self.height;
-        input.monitor_id = self.monitor_id;
-        input.scale_factor = self.scale_factor;
     }
 }
 
@@ -219,10 +223,23 @@ fn monitor_work_area(monitor: &tauri::Monitor) -> WindowRect {
 
 #[cfg(feature = "desktop-app")]
 pub(crate) fn persist_widget_geometry(app: &tauri::AppHandle) -> Result<(), crate::DomainError> {
-    use crate::{
-        domain::widget::WIDGET_WINDOW_LABEL, repositories::database::Database,
-        services::widget_service::WidgetService,
-    };
+    use crate::{repositories::database::Database, services::widget_service::WidgetService};
+    use tauri::Manager;
+
+    let geometry = current_widget_geometry(app)?;
+    let database = app.state::<Database>();
+    let service = WidgetService::new(&database);
+    let mut input = service.get()?.input;
+    geometry.apply_to(&mut input);
+    service.update(input)?;
+    Ok(())
+}
+
+#[cfg(feature = "desktop-app")]
+pub(crate) fn current_widget_geometry(
+    app: &tauri::AppHandle,
+) -> Result<WidgetWindowGeometry, crate::DomainError> {
+    use crate::domain::widget::WIDGET_WINDOW_LABEL;
     use tauri::Manager;
 
     let window = app
@@ -239,20 +256,14 @@ pub(crate) fn persist_widget_geometry(app: &tauri::AppHandle) -> Result<(), crat
         .current_monitor()
         .map_err(window_error)?
         .and_then(|monitor| monitor.name().cloned());
-    let geometry = WidgetWindowGeometry::from_physical(
+    Ok(WidgetWindowGeometry::from_physical(
         position.x,
         position.y,
         size.width,
         size.height,
         monitor_id,
         scale_factor,
-    );
-    let database = app.state::<Database>();
-    let service = WidgetService::new(&database);
-    let mut input = service.get()?.input;
-    geometry.apply_to(&mut input);
-    service.update(input)?;
-    Ok(())
+    ))
 }
 
 #[cfg(feature = "desktop-app")]
@@ -309,6 +320,26 @@ mod tests {
         assert_eq!(input.y, 80.0);
         assert_eq!(input.width, 360.0);
         assert_eq!(input.height, 420.0);
+        assert_eq!(input.monitor_id.as_deref(), Some("DISPLAY2"));
+        assert_eq!(input.scale_factor, 2.0);
+    }
+
+    #[test]
+    fn position_merge_preserves_requested_widget_size() {
+        let geometry =
+            WidgetWindowGeometry::from_physical(920, 180, 720, 840, Some("DISPLAY2".into()), 2.0);
+        let mut input = WidgetConfigInput {
+            width: 440.0,
+            height: 640.0,
+            ..WidgetConfigInput::default()
+        };
+
+        geometry.apply_position_to(&mut input);
+
+        assert_eq!(input.x, 920.0);
+        assert_eq!(input.y, 180.0);
+        assert_eq!(input.width, 440.0);
+        assert_eq!(input.height, 640.0);
         assert_eq!(input.monitor_id.as_deref(), Some("DISPLAY2"));
         assert_eq!(input.scale_factor, 2.0);
     }

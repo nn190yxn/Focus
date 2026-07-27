@@ -180,6 +180,12 @@ export function WidgetApp() {
     else setError(domainErrorMessage(result.error, i18n.t));
   }
 
+  async function hideWidget() {
+    if (!desktopRuntime) return;
+    const result = await widgetClient.hide();
+    if (!result.ok) setError(domainErrorMessage(result.error, i18n.t));
+  }
+
   async function completeTask(item: TodayDigestItem) {
     setBusyAction(`complete:${item.sourceId}`);
     setError(null);
@@ -294,9 +300,20 @@ export function WidgetApp() {
             {i18n.t(focusState.state === "running" ? "widget.status.running" : focusState.state === "paused" ? "widget.status.paused" : "widget.status.today")}
           </Badge>
           {!config.locked && (
-            <Button tone="ghost" aria-label={i18n.t("widget.lockLabel")} onClick={lockWidget}>
-              {i18n.t(config.size === "compact" ? "widget.lockShort" : "widget.lock")}
-            </Button>
+            <>
+              <Button tone="ghost" aria-label={i18n.t("widget.lockLabel")} onClick={lockWidget}>
+                {i18n.t(config.size === "compact" ? "widget.lockShort" : "widget.lock")}
+              </Button>
+              <Button
+                className="widget__close"
+                tone="ghost"
+                aria-label={i18n.t("widget.close")}
+                title={i18n.t("widget.close")}
+                onClick={() => void hideWidget()}
+              >
+                ×
+              </Button>
+            </>
           )}
         </div>
       </header>

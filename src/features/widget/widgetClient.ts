@@ -6,4 +6,5 @@ export const widgetClient = {
   updateConfig: (input: WidgetConfigInput): Promise<CommandResult<WidgetConfig>> => invokeCommand("widget_update_config", { input }),
   show: (): Promise<CommandResult<WidgetConfig>> => invokeCommand("widget_show"),
   unlock: (): Promise<CommandResult<WidgetConfig>> => invokeCommand("widget_unlock"),
+  hide: (): Promise<CommandResult<null>> => invokeCommand("widget_hide"),
 };

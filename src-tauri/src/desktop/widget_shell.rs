@@ -105,10 +105,24 @@ pub fn start_widget_shell_monitor(app: tauri::AppHandle) -> Result<(), DomainErr
                 break;
             };
             let outcome = manager.recover_if_needed(native_window);
+            if !monitor_outcome_requires_apply(outcome) {
+                continue;
+            }
             let _ = apply_outcome(&window, outcome);
         })
         .map(|_| ())
         .map_err(shell_operation_error)
+}
+
+fn monitor_outcome_requires_apply(outcome: ShellAttachmentOutcome) -> bool {
+    matches!(
+        outcome,
+        ShellAttachmentOutcome::DesktopAttached { recovered: true }
+            | ShellAttachmentOutcome::FloatingFallback {
+                should_notify: true,
+                ..
+            }
+    )
 }
 
 fn apply_outcome(
@@ -175,5 +189,35 @@ fn shell_state_error() -> DomainError {
         code: "WIDGET_SHELL_STATE_UNAVAILABLE".into(),
         message: "widget shell state is unavailable".into(),
         field: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn monitor_only_reapplies_window_layer_after_a_state_change() {
+        assert!(!monitor_outcome_requires_apply(
+            ShellAttachmentOutcome::DesktopAttached { recovered: false }
+        ));
+        assert!(!monitor_outcome_requires_apply(
+            ShellAttachmentOutcome::Floating
+        ));
+        assert!(!monitor_outcome_requires_apply(
+            ShellAttachmentOutcome::FloatingFallback {
+                reason: ShellFallbackReason::HostNotFound,
+                should_notify: false,
+            }
+        ));
+        assert!(monitor_outcome_requires_apply(
+            ShellAttachmentOutcome::DesktopAttached { recovered: true }
+        ));
+        assert!(monitor_outcome_requires_apply(
+            ShellAttachmentOutcome::FloatingFallback {
+                reason: ShellFallbackReason::HostNotFound,
+                should_notify: true,
+            }
+        ));
     }
 }

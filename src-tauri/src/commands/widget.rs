@@ -2,7 +2,10 @@
 use crate::{
     desktop::{
         widget_shell::{apply_widget_mode, AppliedWidgetMode},
-        widget_window::{apply_widget_window_behavior, restored_widget_position},
+        widget_window::{
+            apply_widget_window_behavior, current_widget_geometry, persist_widget_geometry,
+            restored_widget_position,
+        },
     },
     domain::widget::{WidgetConfig, WidgetConfigInput, WidgetMode},
     repositories::database::Database,
@@ -21,8 +24,11 @@ pub fn widget_get_config(database: tauri::State<'_, Database>) -> CommandResult<
 pub fn widget_update_config(
     database: tauri::State<'_, Database>,
     app: tauri::AppHandle,
-    input: WidgetConfigInput,
+    mut input: WidgetConfigInput,
 ) -> CommandResult<WidgetConfig> {
+    if let Ok(geometry) = current_widget_geometry(&app) {
+        geometry.apply_position_to(&mut input);
+    }
     result(
         WidgetService::new(&database)
             .update(input)
@@ -57,6 +63,28 @@ pub fn widget_unlock(
     app: tauri::AppHandle,
 ) -> CommandResult<WidgetConfig> {
     result(unlock_widget(&database, &app))
+}
+
+#[cfg(feature = "desktop-app")]
+#[tauri::command]
+pub fn widget_hide(app: tauri::AppHandle) -> CommandResult<()> {
+    result(hide_widget(&app))
+}
+
+#[cfg(feature = "desktop-app")]
+pub(crate) fn hide_widget(app: &tauri::AppHandle) -> Result<(), DomainError> {
+    use tauri::Manager;
+
+    let window = app
+        .get_webview_window(crate::domain::widget::WIDGET_WINDOW_LABEL)
+        .ok_or_else(|| DomainError {
+            code: "WIDGET_WINDOW_MISSING".into(),
+            message: "widget window is unavailable".into(),
+            field: None,
+        })?;
+    let geometry_result = persist_widget_geometry(app);
+    window.hide().map_err(window_error)?;
+    geometry_result
 }
 
 #[cfg(feature = "desktop-app")]

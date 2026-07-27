@@ -304,7 +304,8 @@ pub fn run() {
             commands::widget::widget_get_config,
             commands::widget::widget_update_config,
             commands::widget::widget_show,
-            commands::widget::widget_unlock
+            commands::widget::widget_unlock,
+            commands::widget::widget_hide
         ])
         .build(context)
         .expect("failed to build Arrive Focus");
