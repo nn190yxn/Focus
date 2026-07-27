@@ -40,24 +40,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Enable VBScript for MSI bundling
-        shell: pwsh
-        run: |
-          $feature = Get-WindowsOptionalFeature -Online -FeatureName VBSCRIPT -ErrorAction SilentlyContinue
-          if ($feature -and $feature.State -ne "Enabled") {
-            Enable-WindowsOptionalFeature -Online -FeatureName VBSCRIPT -All -NoRestart
-          } elseif (-not $feature) {
-            $capability = Get-WindowsCapability -Online | Where-Object Name -Like "VBSCRIPT*" | Select-Object -First 1
-            if (-not $capability) { throw "VBScript Windows capability was not found" }
-            if ($capability.State -ne "Installed") {
-              Add-WindowsCapability -Online -Name $capability.Name
-            }
-          }
-
       - name: Cache Rust build output
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
+          cache-on-failure: true
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
@@ -85,6 +72,7 @@ jobs:
           --features desktop-app
           --config src-tauri/tauri.windows-unsigned.conf.json
           --bundles nsis,msi
+          --verbose
           --ci
 
       - name: Collect release files
