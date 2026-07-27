@@ -40,6 +40,14 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Enable VBScript for MSI bundling
+        shell: pwsh
+        run: |
+          $feature = Get-WindowsOptionalFeature -Online -FeatureName VBSCRIPT
+          if ($feature.State -ne "Enabled") {
+            Enable-WindowsOptionalFeature -Online -FeatureName VBSCRIPT -All -NoRestart
+          }
+
       - name: Cache Rust build output
         uses: Swatinem/rust-cache@v2
         with:
