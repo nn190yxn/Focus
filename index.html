@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="下载抵达 Focus，一款面向 Windows 10/11 的本地优先桌面专注工具。"
+    />
+    <meta name="theme-color" content="#f3f0e6" />
+    <title>下载抵达 Focus</title>
+    <link rel="icon" href="./app-icon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Avenir Next", "Segoe UI Variable Text", "Microsoft YaHei UI", sans-serif;
+        color: #243028;
+        background: #f3f0e6;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at 12% 16%, rgb(189 205 190 / 42%), transparent 28rem),
+          radial-gradient(circle at 88% 86%, rgb(203 144 119 / 22%), transparent 30rem),
+          #f3f0e6;
+      }
+
+      body::before {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        opacity: 0.32;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E");
+        pointer-events: none;
+        content: "";
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .shell {
+        width: min(1120px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 30px 0 48px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 720;
+        letter-spacing: -0.02em;
+      }
+
+      .brand img {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        box-shadow: 0 7px 18px rgb(36 48 40 / 12%);
+      }
+
+      .source-link {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0 16px;
+        border: 1px solid rgb(36 48 40 / 15%);
+        border-radius: 999px;
+        background: rgb(255 255 255 / 42%);
+        font-size: 14px;
+        text-decoration: none;
+        backdrop-filter: blur(12px);
+        transition: 160ms ease;
+      }
+
+      .source-link:hover {
+        border-color: rgb(36 48 40 / 34%);
+        background: rgb(255 255 255 / 68%);
+        transform: translateY(-1px);
+      }
+
+      main {
+        min-height: calc(100vh - 120px);
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        align-items: center;
+        gap: clamp(48px, 8vw, 100px);
+        padding: 70px 0;
+      }
+
+      .eyebrow {
+        width: fit-content;
+        margin: 0 0 22px;
+        padding: 7px 11px;
+        border: 1px solid rgb(77 102 82 / 18%);
+        border-radius: 999px;
+        color: #4d6652;
+        background: rgb(215 220 207 / 62%);
+        font-size: 12px;
+        font-weight: 760;
+        letter-spacing: 0.08em;
+      }
+
+      h1 {
+        max-width: 720px;
+        margin: 0;
+        color: #243028;
+        font-size: clamp(50px, 7.4vw, 94px);
+        font-weight: 680;
+        letter-spacing: -0.07em;
+        line-height: 0.96;
+      }
+
+      h1 span {
+        display: block;
+        margin-top: 12px;
+        color: #9d5f4d;
+        font-family: Georgia, "Times New Roman", serif;
+        font-style: italic;
+        font-weight: 500;
+        letter-spacing: -0.055em;
+      }
+
+      .intro {
+        max-width: 590px;
+        margin: 28px 0 32px;
+        color: #5e695f;
+        font-size: clamp(17px, 2vw, 20px);
+        line-height: 1.75;
+      }
+
+      .features {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .features li {
+        padding: 8px 12px;
+        border-radius: 10px;
+        color: #59645a;
+        background: rgb(255 255 255 / 45%);
+        font-size: 13px;
+      }
+
+      .download-card {
+        position: relative;
+        padding: clamp(26px, 4vw, 38px);
+        overflow: hidden;
+        border: 1px solid rgb(36 48 40 / 12%);
+        border-radius: 30px;
+        background: rgb(250 249 244 / 78%);
+        box-shadow: 0 28px 80px rgb(36 48 40 / 13%);
+        backdrop-filter: blur(20px);
+      }
+
+      .download-card::after {
+        position: absolute;
+        top: -80px;
+        right: -80px;
+        width: 190px;
+        height: 190px;
+        border: 34px solid rgb(181 111 88 / 9%);
+        border-radius: 50%;
+        content: "";
+      }
+
+      .version-row {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .version-row small {
+        display: block;
+        margin-bottom: 5px;
+        color: #7b857c;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .version-row strong {
+        font: 600 26px/1.2 Georgia, "Times New Roman", serif;
+      }
+
+      .windows-mark {
+        display: grid;
+        grid-template-columns: repeat(2, 9px);
+        gap: 3px;
+        padding: 10px;
+        border-radius: 12px;
+        background: #e8ebe3;
+      }
+
+      .windows-mark i {
+        width: 9px;
+        height: 9px;
+        background: #596558;
+      }
+
+      .download-button {
+        position: relative;
+        z-index: 1;
+        min-height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 11px;
+        margin: 30px 0 12px;
+        border-radius: 16px;
+        color: #fffdf8;
+        background: #596558;
+        box-shadow: 0 12px 26px rgb(89 101 88 / 24%);
+        font-size: 16px;
+        font-weight: 720;
+        text-decoration: none;
+        transition: 160ms ease;
+      }
+
+      .download-button:hover {
+        background: #495649;
+        box-shadow: 0 16px 30px rgb(89 101 88 / 30%);
+        transform: translateY(-2px);
+      }
+
+      .download-button svg {
+        width: 19px;
+        height: 19px;
+      }
+
+      .file-meta {
+        margin: 0 0 26px;
+        color: #7b857c;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      .details {
+        margin: 0;
+        padding: 22px 0 0;
+        border-top: 1px solid rgb(36 48 40 / 10%);
+      }
+
+      .details div {
+        display: grid;
+        grid-template-columns: 82px minmax(0, 1fr);
+        gap: 12px;
+        padding: 7px 0;
+        font-size: 12px;
+      }
+
+      .details dt {
+        color: #899189;
+      }
+
+      .details dd {
+        min-width: 0;
+        margin: 0;
+        color: #566057;
+      }
+
+      .checksum {
+        overflow: hidden;
+        font-family: "Cascadia Mono", Consolas, monospace;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .utility-links {
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+        margin-top: 22px;
+        font-size: 12px;
+      }
+
+      .utility-links a {
+        color: #667168;
+        text-underline-offset: 4px;
+      }
+
+      .notice {
+        margin: 24px 0 0;
+        padding: 13px 15px;
+        border-radius: 12px;
+        color: #735849;
+        background: rgb(181 111 88 / 10%);
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      footer {
+        color: #818981;
+        font-size: 11px;
+        text-align: center;
+      }
+
+      @media (max-width: 800px) {
+        .shell {
+          width: min(100% - 28px, 620px);
+          padding-top: 20px;
+        }
+
+        main {
+          min-height: auto;
+          grid-template-columns: 1fr;
+          gap: 46px;
+          padding: 72px 0 46px;
+        }
+
+        h1 {
+          font-size: clamp(48px, 17vw, 76px);
+        }
+
+        .download-card {
+          border-radius: 24px;
+        }
+      }
+
+      @media (max-width: 440px) {
+        .source-link {
+          padding: 0 12px;
+          font-size: 12px;
+        }
+
+        .brand span {
+          display: none;
+        }
+
+        .intro {
+          font-size: 16px;
+        }
+
+        .details div {
+          grid-template-columns: 70px minmax(0, 1fr);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div class="brand">
+          <img src="./app-icon.svg" alt="" />
+          <span>抵达 Focus</span>
+        </div>
+        <a class="source-link" href="https://github.com/nn190yxn/Focus">查看源代码</a>
+      </header>
+
+      <main>
+        <section aria-labelledby="page-title">
+          <p class="eyebrow">LOCAL-FIRST · WINDOWS</p>
+          <h1 id="page-title">专注当下，<span>抵达长期。</span></h1>
+          <p class="intro">
+            把长期项目、每日计划、深度专注和周期复盘放在一个安静的桌面空间里。数据保存在本地，打开就能开始。
+          </p>
+          <ul class="features" aria-label="产品特性">
+            <li>本地优先</li>
+            <li>专注计时</li>
+            <li>每日计划</li>
+            <li>周期复盘</li>
+          </ul>
+        </section>
+
+        <section class="download-card" aria-labelledby="download-title">
+          <div class="version-row">
+            <div>
+              <small>Latest release</small>
+              <strong id="download-title">v0.1.4</strong>
+            </div>
+            <span class="windows-mark" aria-label="Windows">
+              <i></i><i></i><i></i><i></i>
+            </span>
+          </div>
+
+          <a
+            class="download-button"
+            href="https://github.com/nn190yxn/Focus/releases/download/v0.1.4/%E6%8A%B5%E8%BE%BE%20Focus_0.1.4_x64-setup.exe"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            下载 Windows 安装包
+          </a>
+          <p class="file-meta">64 位 · Windows 10/11 · 4.59 MB</p>
+
+          <dl class="details">
+            <div>
+              <dt>发布日期</dt>
+              <dd>2026 年 7 月 27 日</dd>
+            </div>
+            <div>
+              <dt>SHA-256</dt>
+              <dd class="checksum" title="bc37fe794199b7f067cccea22bb67afbf1295a83666a17edb42020fae54bfdef">
+                bc37fe794199b7f067cccea22bb67afbf1295a83666a17edb42020fae54bfdef
+              </dd>
+            </div>
+          </dl>
+
+          <div class="utility-links">
+            <a href="https://github.com/nn190yxn/Focus/releases/tag/v0.1.4">版本说明</a>
+            <a href="https://github.com/nn190yxn/Focus/releases/download/v0.1.4/SHA256SUMS.txt">校验文件</a>
+            <a href="https://github.com/nn190yxn/Focus/releases/download/v0.1.4/arrive-focus.exe">便携主程序</a>
+          </div>
+
+          <p class="notice">
+            当前版本尚未进行 Authenticode 签名。Windows 首次运行时可能显示 SmartScreen 提示，请核对发布者仓库和 SHA-256 后继续。
+          </p>
+        </section>
+      </main>
+
+      <footer>抵达 Focus · 让每天的投入靠近真正重要的事</footer>
+    </div>
+  </body>
+</html>
