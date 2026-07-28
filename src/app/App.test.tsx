@@ -9,6 +9,8 @@ const eventUnlisteners = vi.hoisted(() => new Map<string, ReturnType<typeof vi.f
 const settingsMocks = vi.hoisted(() => ({ get: vi.fn(), update: vi.fn() }));
 const todayMocks = vi.hoisted(() => ({ getDigest: vi.fn() }));
 const projectMocks = vi.hoisted(() => ({ list: vi.fn() }));
+const taskMocks = vi.hoisted(() => ({ get: vi.fn(), create: vi.fn(), update: vi.fn(), setCompleted: vi.fn() }));
+const recurrenceMocks = vi.hoisted(() => ({ get: vi.fn(), create: vi.fn(), update: vi.fn(), setStatus: vi.fn(), complete: vi.fn(), skip: vi.fn(), delayToday: vi.fn(), rescheduleTomorrow: vi.fn() }));
 
 vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn(async (event: string, callback: (event: { payload: unknown }) => void) => {
@@ -53,6 +55,14 @@ vi.mock("../features/projects/projectClient", () => ({
   },
 }));
 
+vi.mock("../features/tasks/taskClient", () => ({
+  taskClient: taskMocks,
+}));
+
+vi.mock("../features/recurrence/recurrenceClient", () => ({
+  recurrenceClient: recurrenceMocks,
+}));
+
 import { App, applicationTitle } from "./App";
 
 beforeEach(() => {
@@ -73,6 +83,18 @@ beforeEach(() => {
     version: 1,
   }));
   projectMocks.list.mockResolvedValue({ ok: true, data: [], version: 1 });
+  taskMocks.get.mockReset();
+  taskMocks.create.mockReset();
+  taskMocks.update.mockReset();
+  taskMocks.setCompleted.mockReset();
+  recurrenceMocks.get.mockReset();
+  recurrenceMocks.create.mockReset();
+  recurrenceMocks.update.mockReset();
+  recurrenceMocks.setStatus.mockReset();
+  recurrenceMocks.complete.mockReset();
+  recurrenceMocks.skip.mockReset();
+  recurrenceMocks.delayToday.mockReset();
+  recurrenceMocks.rescheduleTomorrow.mockReset();
 });
 
 afterEach(() => {
@@ -194,6 +216,31 @@ describe("App", () => {
     expect(calendar).toHaveFocus();
     expect(calendar).toHaveAttribute("aria-current", "page");
     expect(screen.queryByLabelText("本周日期")).not.toBeInTheDocument();
+  });
+
+  it("edits recurring task content through the template task and refreshes future instances", async () => {
+    Object.defineProperty(window, "__TAURI_INTERNALS__", { configurable: true, value: {} });
+    todayMocks.getDigest.mockImplementation(async (date: string) => ({
+      ok: true,
+      data: { date, items: [{ sourceKind: "recurringInstance", sourceId: "instance-1", itemKind: "recurringInstance", recurrenceRuleId: "rule-1", title: "每日复盘", category: "work", priority: 2, scheduledDate: "2026-07-19", scheduledTime: "18:00", status: "pending", completedAt: null, project: null, isOverdue: false, createdAt: "2026-07-19T08:00:00Z" }] },
+      version: 1,
+    }));
+    recurrenceMocks.get.mockResolvedValue({ ok: true, data: { id: "rule-1", taskTemplateId: "template-1", pattern: { kind: "daily", interval: 1 }, localTime: "18:00", timezone: "Asia/Shanghai", startsOn: "2026-07-19", endsOn: null, status: "active", version: 1 }, version: 1 });
+    taskMocks.get.mockResolvedValue({ ok: true, data: { task: { id: "template-1", projectId: null, title: "每日复盘模板", category: "work", priority: 2, scheduledDate: "2026-07-19", scheduledTime: "18:00", status: "pending", completedAt: null, createdAt: "2026-07-18T08:00:00Z", updatedAt: "2026-07-18T08:00:00Z" }, checkItems: [] }, version: 1 });
+    taskMocks.update.mockResolvedValue({ ok: true, data: { task: { id: "template-1", projectId: null, title: "晚间复盘", category: "work", priority: 2, scheduledDate: "2026-07-19", scheduledTime: "18:00", status: "pending", completedAt: null, createdAt: "2026-07-18T08:00:00Z", updatedAt: "2026-07-19T08:00:00Z" }, checkItems: [] }, version: 1 });
+    recurrenceMocks.update.mockResolvedValue({ ok: true, data: { ruleId: "rule-1", scheduledCount: 365, affectedCount: 1 }, version: 1 });
+
+    render(<App />);
+    await screen.findByRole("button", { name: "打开任务：每日复盘" });
+
+    fireEvent.click(screen.getByRole("button", { name: "打开任务：每日复盘" }));
+    const dialog = await screen.findByRole("dialog", { name: "编辑任务" });
+    fireEvent.change(screen.getByLabelText("任务标题"), { target: { value: "晚间复盘" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存任务" }));
+
+    await waitFor(() => expect(taskMocks.update).toHaveBeenCalledWith("template-1", expect.objectContaining({ title: "晚间复盘" }), expect.any(String)));
+    expect(recurrenceMocks.update).toHaveBeenCalledWith(expect.objectContaining({ id: "rule-1", version: 2 }), { scope: "future", effectiveOn: "2026-07-19" }, "2027-07-19");
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
   });
 
   it("applies shared settings events to the main window theme", async () => {

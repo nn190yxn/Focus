@@ -12,6 +12,7 @@ type TaskEditorProps = {
   projects: readonly TaskProjectSummary[];
   initialValue?: TaskInput;
   submitLabel?: string;
+  showRecurrence?: boolean;
   onCancel: () => void;
   onSubmit: (input: TaskInput, recurrence: RecurrenceRuleInput | null) => void | Promise<void>;
 };
@@ -40,7 +41,7 @@ export function validateTaskInput(input: TaskInput, today: string, t: I18nValue[
   return errors;
 }
 
-export function TaskEditor({ today, projects, initialValue, submitLabel, onCancel, onSubmit }: TaskEditorProps) {
+export function TaskEditor({ today, projects, initialValue, submitLabel, showRecurrence = true, onCancel, onSubmit }: TaskEditorProps) {
   const { t } = useI18n();
   const [value, setValue] = useState<TaskInput>(() => cloneTaskInput(initialValue ?? emptyTask));
   const [errors, setErrors] = useState<TaskEditorErrors>({});
@@ -73,13 +74,13 @@ export function TaskEditor({ today, projects, initialValue, submitLabel, onCance
       checkItems: value.checkItems.map((item) => ({ ...item, title: item.title.trim() })),
     };
     const nextErrors = validateTaskInput(nextValue, today, t);
-    const recurrenceError = repeatEnabled ? validateRecurrenceInput(recurrence, t) : null;
+    const recurrenceError = showRecurrence && repeatEnabled ? validateRecurrenceInput(recurrence, t) : null;
     if (recurrenceError) nextErrors.recurrence = recurrenceError;
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
     setSubmitting(true);
     try {
-      await onSubmit(nextValue, repeatEnabled ? recurrence : null);
+      await onSubmit(nextValue, showRecurrence && repeatEnabled ? recurrence : null);
     } finally {
       setSubmitting(false);
     }
@@ -142,12 +143,12 @@ export function TaskEditor({ today, projects, initialValue, submitLabel, onCance
         <Button type="button" tone="ghost" onClick={() => setValue((current) => ({ ...current, checkItems: [...current.checkItems, { title: "", completed: false }] }))}>{t("task.editor.addCheck")}</Button>
       </fieldset>
 
-      <fieldset className="recurrence-toggle">
+      {showRecurrence ? <fieldset className="recurrence-toggle">
         <legend>{t("task.editor.recurrence")}</legend>
         <label className="recurrence-toggle__switch"><input type="checkbox" checked={repeatEnabled} onChange={(event) => setRepeatEnabled(event.target.checked)} /><span>{t("task.editor.recurrenceHint")}</span></label>
         {repeatEnabled ? <RecurrenceEditor initialValue={recurrence} showActions={false} onChange={setRecurrence} /> : null}
         {errors.recurrence ? <small className="field__error" role="alert">{errors.recurrence}</small> : null}
-      </fieldset>
+      </fieldset> : null}
 
       <footer className="task-editor__footer">
         <Button type="button" tone="ghost" onClick={onCancel}>{t("common.cancel")}</Button>

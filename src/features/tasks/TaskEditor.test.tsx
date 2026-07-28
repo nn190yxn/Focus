@@ -87,4 +87,11 @@ describe("TaskEditor", () => {
       startsOn: "2026-07-18",
     })));
   });
+
+  it("can hide recurrence controls when editing generated recurring task content", () => {
+    render(<TaskEditor today="2026-07-18" projects={projects} initialValue={validInput} showRecurrence={false} onCancel={() => undefined} onSubmit={() => undefined} />);
+
+    expect(screen.queryByText("重复计划")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("任务标题")).toHaveValue("整理任务编辑器");
+  });
 });

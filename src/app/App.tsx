@@ -18,7 +18,7 @@ import { SettingsWorkspace } from "../features/settings/SettingsWorkspace";
 import { defaultGeneralPreferences, type GeneralPreferences, type GeneralPreferencesPatch } from "../features/settings/types";
 import { TaskEditor } from "../features/tasks/TaskEditor";
 import { taskClient } from "../features/tasks/taskClient";
-import type { TaskInput, TaskProjectSummary, TaskVisualState } from "../features/tasks/types";
+import type { TaskDetail, TaskInput, TaskProjectSummary, TaskVisualState } from "../features/tasks/types";
 import { TodayWorkspace } from "../features/today/TodayWorkspace";
 import { planningClient } from "../features/today/planningClient";
 import type { WeeklyGoal, WeeklyGoalCategory, WeeklyGoalInput } from "../features/today/planningTypes";
@@ -86,6 +86,7 @@ export function App() {
   const [memoDataRevision, setMemoDataRevision] = useState(0);
   const [memoOpenRequest, setMemoOpenRequest] = useState<MemoOpenRequest | null>(null);
   const [memoQuery, setMemoQuery] = useState<MemoListQuery>({ search: "", tagId: null });
+  const [editingRecurringTask, setEditingRecurringTask] = useState<{ instanceId: string; effectiveOn: string; rule: RecurrenceRule; template: TaskDetail } | null>(null);
   const [editingRecurrence, setEditingRecurrence] = useState<{ instanceId: string; effectiveOn: string; rule: RecurrenceRule } | null>(null);
   const desktopRuntime = isTauriRuntime();
   const theme = generalSettings.theme;
@@ -346,7 +347,12 @@ export function App() {
         setTaskError(domainErrorMessage(result.error, i18n.t));
         return;
       }
-      setEditingRecurrence({ instanceId: id, effectiveOn: source.task.scheduledDate ?? selectedDate, rule: result.data });
+      const templateResult = await taskClient.get(result.data.taskTemplateId);
+      if (!templateResult.ok) {
+        setTaskError(domainErrorMessage(templateResult.error, i18n.t));
+        return;
+      }
+      setEditingRecurringTask({ instanceId: id, effectiveOn: source.task.scheduledDate ?? selectedDate, rule: result.data, template: templateResult.data });
       return;
     }
     if (desktopRuntime) {
@@ -465,6 +471,29 @@ export function App() {
     await refreshDigest();
   }
 
+  async function saveRecurringTask(input: TaskInput) {
+    if (!editingRecurringTask) return;
+    if (desktopRuntime) {
+      const validationDate = editingRecurringTask.template.task.scheduledDate ?? today;
+      const templateResult = await taskClient.update(editingRecurringTask.rule.taskTemplateId, input, validationDate);
+      if (!templateResult.ok) {
+        setTaskError(domainErrorMessage(templateResult.error, i18n.t));
+        return;
+      }
+      const proposed = { ...editingRecurringTask.rule, version: editingRecurringTask.rule.version + 1 };
+      const recurrenceResult = await recurrenceClient.update(proposed, { scope: "future", effectiveOn: editingRecurringTask.effectiveOn }, proposed.endsOn ?? addOneYear(editingRecurringTask.effectiveOn));
+      if (!recurrenceResult.ok) {
+        setTaskError(domainErrorMessage(recurrenceResult.error, i18n.t));
+        return;
+      }
+      setEditingRecurringTask(null);
+      await refreshDigest();
+      setGoalDataRevision((value) => value + 1);
+      return;
+    }
+    setEditingRecurringTask(null);
+  }
+
   async function setRecurrenceStatus(status: "paused" | "ended") {
     if (!editingRecurrence) return;
     const result = await recurrenceClient.setStatus(editingRecurrence.rule.id, status);
@@ -518,6 +547,12 @@ export function App() {
       <Dialog open={editingTaskId !== null} title={i18n.t(editingTask ? "task.edit" : "task.create")} onClose={() => { setEditingTaskId(null); setDraftProjectId(null); }}>
         {editingTaskId ? <TaskEditor key={`${editingTaskId}-${draftProjectId ?? "none"}`} today={today} projects={projectOptions} initialValue={editingTask ? taskToInput(editingTask) : { ...emptyTaskInput, projectId: draftProjectId, scheduledDate: selectedDate < today ? today : selectedDate }} submitLabel={i18n.t(editingTask ? "task.save" : "task.create")} onCancel={() => { setEditingTaskId(null); setDraftProjectId(null); }} onSubmit={saveTask} /> : null}
       </Dialog>
+      <Dialog open={editingRecurringTask !== null} title={i18n.t("task.edit")} onClose={() => setEditingRecurringTask(null)}>
+        {editingRecurringTask ? <div className="recurrence-scope-editor">
+          <div className="recurrence-rule-actions"><span>{i18n.t("task.recurring")}</span><Button tone="ghost" onClick={() => { setEditingRecurrence({ instanceId: editingRecurringTask.instanceId, effectiveOn: editingRecurringTask.effectiveOn, rule: editingRecurringTask.rule }); setEditingRecurringTask(null); }}>{i18n.t("task.recurrenceEdit")}</Button></div>
+          <TaskEditor key={`${editingRecurringTask.instanceId}-${editingRecurringTask.template.task.updatedAt}`} today={editingRecurringTask.template.task.scheduledDate ?? today} projects={projectOptions} initialValue={taskDetailToInput(editingRecurringTask.template)} submitLabel={i18n.t("task.save")} showRecurrence={false} onCancel={() => setEditingRecurringTask(null)} onSubmit={(input) => saveRecurringTask(input)} />
+        </div> : null}
+      </Dialog>
       <Dialog open={editingRecurrence !== null} title={i18n.t("task.recurrenceEdit")} onClose={() => setEditingRecurrence(null)}>
         {editingRecurrence ? <RecurrenceScopeEditor instanceId={editingRecurrence.instanceId} effectiveOn={editingRecurrence.effectiveOn} rule={editingRecurrence.rule} onCancel={() => setEditingRecurrence(null)} onSubmit={updateRecurrence} onSetStatus={setRecurrenceStatus} /> : null}
       </Dialog>
@@ -532,6 +567,11 @@ const emptyTaskInput: TaskInput = { projectId: null, title: "", category: "work"
 function taskToInput(item: WorkspaceTask): TaskInput {
   const { projectId, title, category, priority, scheduledDate, scheduledTime } = item.task;
   return { projectId, title, category, priority, scheduledDate, scheduledTime, checkItems: item.checkItems };
+}
+
+function taskDetailToInput(detail: TaskDetail): TaskInput {
+  const { projectId, title, category, priority, scheduledDate, scheduledTime } = detail.task;
+  return { projectId, title, category, priority, scheduledDate, scheduledTime, checkItems: detail.checkItems.map((item) => ({ id: item.id, title: item.title, completed: Boolean(item.completedAt) })) };
 }
 
 function makeTask(id: string, title: string, projectId: string | null, category: TaskInput["category"], scheduledTime: string, visualState: TaskVisualState, priority: number, checks: string[] = [], scheduledDate = initialToday): WorkspaceTask {
