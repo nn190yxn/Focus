@@ -235,6 +235,8 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "打开任务：每日复盘" }));
     const dialog = await screen.findByRole("dialog", { name: "编辑任务" });
+    expect(screen.getByText("这里修改任务内容；频率、结束日期和暂停状态请进入重复计划。")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "修改重复计划" })).toBeEnabled();
     fireEvent.change(screen.getByLabelText("任务标题"), { target: { value: "晚间复盘" } });
     fireEvent.click(screen.getByRole("button", { name: "保存任务" }));
 

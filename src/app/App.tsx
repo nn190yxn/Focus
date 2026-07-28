@@ -550,6 +550,7 @@ export function App() {
       <Dialog open={editingRecurringTask !== null} title={i18n.t("task.edit")} onClose={() => setEditingRecurringTask(null)}>
         {editingRecurringTask ? <div className="recurrence-scope-editor">
           <div className="recurrence-rule-actions"><span>{i18n.t("task.recurring")}</span><Button tone="ghost" onClick={() => { setEditingRecurrence({ instanceId: editingRecurringTask.instanceId, effectiveOn: editingRecurringTask.effectiveOn, rule: editingRecurringTask.rule }); setEditingRecurringTask(null); }}>{i18n.t("task.recurrenceEdit")}</Button></div>
+          <p className="settings-panel__description">{i18n.t("task.recurringEditHint")}</p>
           <TaskEditor key={`${editingRecurringTask.instanceId}-${editingRecurringTask.template.task.updatedAt}`} today={editingRecurringTask.template.task.scheduledDate ?? today} projects={projectOptions} initialValue={taskDetailToInput(editingRecurringTask.template)} submitLabel={i18n.t("task.save")} showRecurrence={false} onCancel={() => setEditingRecurringTask(null)} onSubmit={(input) => saveRecurringTask(input)} />
         </div> : null}
       </Dialog>
